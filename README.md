@@ -21,8 +21,8 @@ LiveData 객체는 주로 AAC ViewModel 에서 관리하게 되는데, 이 또�
 또한 Domain레이어는 안드로이드에 의존성을 가지지 않은 순수 Java 및 Kotlin 코드로만 구성합니다. 그런데 LiveData는 사용할 수 없습니다.
 
 이에 따라 문제점을 요약하면 아래와 같습니다.
-+ LiveData 는 UI 에 밀접하게 연관되어 있기 때문에 Data Layer 에서 비동기 방식으로 데이터를 처리하기에 자연스러운 방법이 없다.
-+ LiveData 는 안드로이드 플랫폼에 속해 있기 때문에 순수 Java / Kotlin 을 사용해야 하는 Domain Layer 에서 사용하기에 적합하지 않다.
++ LiveData 는 **UI 에 밀접**하게 연관되어 있기 때문에 **Data Layer 에서 비동기 방식으로 데이터를 처리**하기에 자연스러운 방법이 없다.
++ LiveData 는 안드로이드 플랫폼에 속해 있기 때문에 **순수 Java / Kotlin 을 사용해야 하는 Domain Layer 에서 사용하기에 적합하지 않다.**
 
 안드로이드 개발 언어로 코틀린이 자리 잡기 전까지는 위와 같은 문제점을 안고 있으면서도 안드로이드 진영에서는 별다른 선택권이 없었습니다. 그러나 코틀린 코루틴이 발전하면서, Flow 가 등장하게 되었고 많은 안드로이드 커뮤니티에서는 이 Flow 를 이용해서 LiveData 를 대체할 수 있을지에 대한 기대가 생기기 시작했습니다.
 
@@ -34,23 +34,26 @@ LiveData 객체는 주로 AAC ViewModel 에서 관리하게 되는데, 이 또�
 이를 위해 kotlin 1.41 버전에 Stable API 로 등장한 것이 바로 **StateFlow** 와 **SharedFlow** 입니다.
 
 ## StateFlow
-StateFlow 는 현재 상태와 새로운 상태 업데이트를 collector 에 내보내는 Observable 한 State holder flow 입니다. 그리고 LiveData 와 마찬가지로 value 프로퍼티를 통해서 현재 상태 값을 읽을 수 있습니다.
+StateFlow 는 현재 상태와 새로운 상태 업데이트를 collector 에 내보내는 Observable 한 **State holder flow** 입니다. 그리고 LiveData 와 마찬가지로 value 프로퍼티를 통해서 현재 상태 값을 읽을 수 있습니다.
 
 StateFlow 는 SharedFlow 의 한 종류이며, LiveData 에 가장 가깝습니다.
 
 특징으로는 다음과 같습니다.
 
-+ StateFlow 는 항상 값을 가지고 있고, 오직 한 가지 값을 가집니다.
-+ StateFlow 는 여러 개의 collector 를 지원합니다. 이는 flow 가 공유된다는 의미이며 앞서 설명했던 flow 의 단점(3)과는 다르게 업스트림이 collector 마다 중복으로 처리되지 않습니다.
++ StateFlow 는 항상 값을 가지고 있고, **오직 한 가지 값을 가집니다.**
++ StateFlow 는 **여러 개의 collector 를 지원합니다.** 이는 flow 가 공유된다는 의미이며 앞서 설명했던 flow 의 단점(3)과는 다르게 업스트림이 collector 마다 중복으로 처리되지 않습니다.
 + StateFlow 는 collector 수에 관계없이 항상 구독하고 있는 것의 최신 값을 받습니다.
-+ StateFlow 는 flow builder 를 사용하여 빌드된 flow 가 cold stream 이었던 것과 달리, hot stream 입니다. 따라서 collector 에서 수집하더라도 생산자 코드가 트리거 되지 않고, 일반 flow 는 마지막 값의 개념이 없었던 것과 달리 StateFlow 는 마지막 값의 개념이 있으며 생성하자마자 활성화됩니다.
++ StateFlow 는 **flow builder 를 사용하여 빌드된 flow 가 cold stream 이었던 것과 달리, hot stream 입니다.** 따라서 collector 에서 수집하더라도 생산자 코드가 트리거 되지 않고, 일반 flow 는 마지막 값의 개념이 없었던 것과 달리 StateFlow 는 마지막 값의 개념이 있으며 생성하자마자 활성화됩니다.
  
-StateFlow 와 LiveData 는 둘 다 관찰 가능한 데이터 홀더 클래스이며, 앱 아키텍쳐에서 사용할 때 비슷한 패턴을 따릅니다. 즉, MVVM 에서 LiveData 사용되는 자리에 StateFlow 로 대체할 수 있습니다. 그리고 Android Studio Arctic fox 버전부터는 AAC Databinding 에도 StateFlow 가 호환됩니다.
+StateFlow 와 LiveData 는 둘 다 관찰 가능한 데이터 홀더 클래스이며, 앱 아키텍쳐에서 사용할 때 비슷한 패턴을 따릅니다. 즉, MVVM 에서 LiveData 사용되는 자리에 StateFlow 로 대체할 수 있습니다. 그리고 **Android Studio Arctic fox 버전부터는 AAC Databinding 에도 StateFlow 가 호환됩니다.**
 
 그러나 StateFlow 와 LiveData 는 다음과 같이 다르게 작동합니다.
 
 + StateFlow 의 경우 초기 상태를 생성자에 전달해야 하지만, LiveData 의 경우는 전달하지 않아도 됩니다.
-+ View 가 STOPPED 상태가 되면 LiveData.observe() 는 Observer 를 자동으로 등록 취소하는 반면, StateFlow 는 자동으로 collect 를 중지하지 않습니다. 만약 동일한 동작을 실행하려면 Lifecycle.repeatOnLifecycle 블록에서 흐름을 수집해야 합니다.
+<div align="center">
+<img src = "https://user-images.githubusercontent.com/48902047/161410708-265272c8-380b-48df-96c2-6a10178aa48a.png">
+</div>
++ View 가 STOPPED 상태가 되면 LiveData.observe() 는 Observer 를 자동으로 등록 취소하는 반면, StateFlow 는 자동으로 collect 를 중지하지 않습니다. 만약 동일한 동작을 실행하려면 Lifecycle.repeatOnLifecycle 블록에서 흐름을 수집해야 합니다. -> 비동기화 특징인듯
 
 다음은 LiveData를 사용한 Domain 레이어와 UI 레이어 예시입니다.
 ## LiveData를 사용한 예시
